@@ -17,6 +17,7 @@
     <nav class="site-nav" aria-label="Site">
       <a href="index.html">Studio</a>
       <a href="agents.html" aria-current="page">For agents</a>
+      <a href="gallery.html">Gallery</a>
       <a href="about.html">About</a>
       <a href="team.html">Team</a>
     </nav>
@@ -29,7 +30,7 @@
     <p>The studio is one module, <a href="glyphloom.js"><code>glyphloom.js</code></a>, with no dependencies. It takes RGBA pixels and returns a grid of characters with their colours, and it writes each export. It runs in a browser and in Node, so an agent can use it without the page. Its source and its tests are in the repository <a href="https://github.com/CommandAGI/site-glyphloom">CommandAGI/site-glyphloom</a>.</p>
 
     <h2>One function</h2>
-<pre><code>import { render, toText, toAnsi, toHtml } from "./glyphloom.js";
+<pre><code>import { render, toText, toAnsi, toHtml, toAnimatedHtml } from "./glyphloom.js";
 
 // image: { width, height, data } with RGBA bytes (a browser's ImageData has this shape)
 const grid = render(image, {
@@ -43,7 +44,8 @@ const grid = render(image, {
 
 process.stdout.write(toAnsi(grid));   // a terminal
 toText(grid);                         // plain text
-toHtml(grid, { title: "A frame" });   // one self-contained HTML file</code></pre>
+toHtml(grid, { title: "A frame" });   // one self-contained HTML file
+toAnimatedHtml(frames, { fps: 10 });  // moving art: one HTML file that plays the grids by CSS, no script</code></pre>
     <p>In a browser, <code>paint(ctx, grid)</code> draws the art on a canvas, which the studio saves as a PNG.</p>
 
     <h2>Options</h2>
@@ -55,12 +57,15 @@ toHtml(grid, { title: "A frame" });   // one self-contained HTML file</code></pr
         <tr><td><code>dither</code></td><td>none, floyd-steinberg, atkinson, ordered</td><td>spreads each cell's rounding error to its neighbours, or uses a 4×4 threshold pattern</td></tr>
         <tr><td><code>brightness</code>, <code>contrast</code>, <code>gamma</code>, <code>invert</code></td><td>numbers, a boolean</td><td>tone before the characters are chosen</td></tr>
         <tr><td><code>color</code>, <code>colorTarget</code></td><td>none, ansi16, ansi256, truecolor; fg or bg</td><td>each cell's mean colour, on the character or behind it</td></tr>
+        <tr><td><code>scanlines</code>, <code>bloom</code>, <code>halftone</code></td><td>0 (off) to 1</td><td>post effects over the art in the HTML exports and the PNG; the characters stay as they are</td></tr>
       </tbody>
     </table>
 
     <h2>With a CommandAGI agent</h2>
-    <p>An agent on CommandAGI can turn what it sees into text it can read and post: a camera stream's frame, or the render of a 3D document. It decodes the frame to RGBA, calls <code>render</code>, and posts <code>toText</code> in its thread or <code>toAnsi</code> in a terminal.</p>
-    <p class="note">What is built today: this module and its tests. Not built yet: a CommandAGI tool that does this in one call for a stream frame or a 3D document. It is on Glyphloom's list.</p>
+    <p>An agent on CommandAGI turns what it sees into text it can read and post with one call of the tool <code>character_art</code> on a CommandAGI host. It takes an image file (PNG, JPEG, WebP or GIF), a camera stream's frame (its <code>video.mjpeg</code>, or the stream folder that <code>request_frame</code> answers with; the last frame, or the one at a second you name) or a 3D model (an STL, an OBJ, or a 3D document in code, which the 3D kernel tessellates, seen from a view you name). It answers with text, ANSI for a terminal, or an HTML file. It only reads.</p>
+<pre><code>character_art { "path": "camera/stream", "columns": 80 }
+character_art { "path": "Bracket.3d.tsx", "view": "front", "format": "ansi" }</code></pre>
+    <p>The tool and this page use the same module: the CommandAGI host carries it, and this site carries a copy of the same file.</p>
   </article>
 </main>
 

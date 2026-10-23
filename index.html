@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Glyphloom: character art from a picture or a word</title>
-<meta name="description" content="Turn an image or a line of text into ASCII, block, braille or ANSI art in your browser. Your image never leaves your device.">
+<style id="effects"></style>
+<meta name="description" content="Turn an image, a video or a line of text into ASCII, block, braille or ANSI art in your browser. Your picture never leaves your device.">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="mark.svg" type="image/svg+xml">
 </head>
@@ -17,6 +18,7 @@
     <nav class="site-nav" aria-label="Site">
       <a href="index.html" aria-current="page">Studio</a>
       <a href="agents.html">For agents</a>
+      <a href="gallery.html">Gallery</a>
       <a href="about.html">About</a>
       <a href="team.html">Team</a>
     </nav>
@@ -26,11 +28,22 @@
 <main id="main">
   <section class="lede wrap">
     <h1>Weave a picture out of characters.</h1>
-    <p>Open an image or type a word. Choose the width, the characters, the colour and the dithering, then copy or download the result. Everything happens in this page: your image never leaves your device.</p>
+    <p>Open an image or a video, or type a word. Choose the width, the characters, the colour, the dithering and the effects, then copy or download the result. Everything happens in this page: your picture never leaves your device.</p>
   </section>
 
   <section class="studio wrap" aria-label="Studio">
     <form class="panel" id="controls">
+      <fieldset>
+        <legend>Preset</legend>
+        <div class="row two"><label for="preset">Start from</label><select id="preset"></select></div>
+        <div class="row two"><label for="preset-name">Keep as</label><input type="text" id="preset-name" maxlength="40" autocomplete="off" placeholder="A name for these settings"></div>
+        <div class="btns">
+          <button type="button" class="btn" id="preset-save">Keep these settings</button>
+          <button type="button" class="btn" id="preset-delete" disabled>Forget this preset</button>
+        </div>
+        <p class="status">Your presets stay in this browser.</p>
+      </fieldset>
+
       <fieldset>
         <legend>Source</legend>
         <div class="seg" role="group" aria-label="Source">
@@ -39,11 +52,11 @@
         </div>
         <div id="image-source">
           <div class="btns">
-            <label class="btn primary" for="file">Open an image</label>
-            <input class="hidden" type="file" id="file" accept="image/*">
+            <label class="btn primary" for="file">Open an image or a video</label>
+            <input class="hidden" type="file" id="file" accept="image/*,video/*">
             <button type="button" class="btn" id="sample">Use the sample</button>
           </div>
-          <div class="drop" id="drop">Drop an image here, or paste one.</div>
+          <div class="drop" id="drop">Drop an image or a video here, or paste an image.</div>
         </div>
         <div id="text-source" class="hidden">
           <div class="row two"><label for="text">Text</label><input type="text" id="text" value="hello" maxlength="40" autocomplete="off"></div>
@@ -100,6 +113,13 @@
       </fieldset>
 
       <fieldset>
+        <legend>Effects</legend>
+        <div class="row"><label for="scanlines">Scan lines</label><input type="range" id="scanlines" min="0" max="1" step="0.05" value="0"><output for="scanlines" id="scanlines-out">0.00</output></div>
+        <div class="row"><label for="bloom">Glow</label><input type="range" id="bloom" min="0" max="1" step="0.05" value="0"><output for="bloom" id="bloom-out">0.00</output></div>
+        <div class="row"><label for="halftone">Halftone</label><input type="range" id="halftone" min="0" max="1" step="0.05" value="0"><output for="halftone" id="halftone-out">0.00</output></div>
+      </fieldset>
+
+      <fieldset>
         <legend>Colour</legend>
         <div class="row two"><label for="color">Colour</label>
           <select id="color">
@@ -123,6 +143,11 @@
           <button type="button" class="btn" data-export="html">.html</button>
           <button type="button" class="btn" data-export="png">.png</button>
         </div>
+        <div class="btns">
+          <button type="button" class="btn" data-export="anim" data-moving disabled>Moving .html</button>
+          <button type="button" class="btn" data-export="webm" data-moving disabled>.webm</button>
+        </div>
+        <p class="status">Moving exports are made from a video, 10 frames a second, at most 10 seconds.</p>
         <p class="status" id="status" role="status" aria-live="polite"></p>
       </fieldset>
     </form>
@@ -130,10 +155,11 @@
     <div class="stage">
       <div class="stage-bar">
         <span id="dims">Open an image or use the sample.</span>
+        <span class="video-bar hidden" id="video-bar"><button type="button" class="btn" id="play" aria-pressed="true">Pause</button> <span id="clock"></span></span>
         <label class="check"><input type="checkbox" id="fit" checked> Fit to the frame</label>
       </div>
       <div class="frame" id="frame"><pre id="art" aria-label="The character art"></pre></div>
-      <p class="private"><span aria-hidden="true">&#9670;</span><span>Private by construction: this page reads your image with your browser and sends nothing. Its security policy forbids it any connection after it loads.</span></p>
+      <p class="private"><span aria-hidden="true">&#9670;</span><span>Private by construction: this page reads your picture with your browser and sends nothing. Its security policy forbids it any connection after it loads.</span></p>
     </div>
   </section>
 </main>
@@ -141,7 +167,7 @@
 <footer class="site-foot">
   <div class="wrap">
     <span>Glyphloom, a company of CommandAGI</span>
-    <span><a href="agents.html">For agents</a> &middot; <a href="about.html">About</a> &middot; <a href="team.html">Team</a></span>
+    <span><a href="agents.html">For agents</a> &middot; <a href="gallery.html">Gallery</a> &middot; <a href="about.html">About</a> &middot; <a href="team.html">Team</a></span>
   </div>
 </footer>
 <script type="module" src="studio.js"></script>

@@ -1,8 +1,10 @@
-// Glyphloom's renderer: RGBA pixels in, a grid of characters with their colours out, and the writers of each export.
+// Character art: RGBA pixels in, a grid of characters with their colours out, and the writers of each export.
 // Pure: no DOM, no network. It runs in a browser and in Node. `paint` draws on a canvas context that the caller owns.
+// One file: packages/domain/world/character-art.js in CommandAGI (the host's `character_art` tool) is the source, and
+// Glyphloom's site carries it byte for byte as glyphloom.js (tests/workbench/character-art.test.mjs holds them equal).
 //
 //   const grid = render({ width, height, data }, { columns: 80, charset: "simple", dither: "floyd-steinberg" });
-//   toText(grid); toAnsi(grid); toHtml(grid); paint(ctx, grid);
+//   toText(grid); toAnsi(grid); toHtml(grid); toAnimatedHtml([grid, …], { fps }); paint(ctx, grid);
 
 /** Character sets, each ordered from the least ink to the most. `braille` is drawn as dots, not from a ramp. */
 export const CHARSETS = {
@@ -29,7 +31,14 @@ export const DEFAULTS = {
   dither: "none",
   color: "none",
   colorTarget: "fg", // "fg": the character carries the colour; "bg": the cell behind it does
+  // Post effects, 0 (off) … 1, drawn over the art by paint and the HTML exports, never into the characters.
+  scanlines: 0, // dark lines across, as on a cathode-ray screen
+  bloom: 0, // the ink glows into the paper around it
+  halftone: 0, // each cell seen through a round dot
 };
+
+/** The post effects: each an option from 0 (off) to 1. */
+export const EFFECTS = ["scanlines", "bloom", "halftone"];
 
 // xterm's 16 colours.
 export const ANSI16 = [
@@ -296,10 +305,30 @@ export function toSpans(grid) {
   return lines.join("\n");
 }
 
-/** One self-contained HTML file of the art. */
-export function toHtml(grid, { title = "Character art", fontSize = 10 } = {}) {
-  const dark = grid.options.paper === "dark";
-  return `<!doctype html>
+const strength = (o, name) => Math.max(0, Math.min(1, Number(o[name]) || 0));
+
+/**
+ * The post effects as CSS rules for `sel`, the element that holds the art (a <pre>). A cell is `--cell-w` wide and
+ * `--cell-h` tall (default 1ch and 1em): the halftone has one dot a cell. Empty when every effect is off.
+ */
+export function effectCss(options, sel = "pre") {
+  const o = { ...DEFAULTS, ...options };
+  const bloom = strength(o, "bloom"), lines = strength(o, "scanlines"), dots = strength(o, "halftone");
+  const rules = [];
+  if (bloom) rules.push(`${sel} { text-shadow: 0 0 ${(1 + 3 * bloom).toFixed(2)}px currentColor, 0 0 ${(4 + 10 * bloom).toFixed(2)}px currentColor; }`);
+  if (dots) {
+    const r = Math.round(100 - 45 * dots);
+    const mask = `radial-gradient(circle closest-side, #000 ${r}%, rgba(0,0,0,${(1 - dots).toFixed(2)}) ${Math.min(100, r + 6)}%)`;
+    rules.push(`${sel} { -webkit-mask-image: ${mask}; mask-image: ${mask}; -webkit-mask-size: var(--cell-w, 1ch) var(--cell-h, 1em); mask-size: var(--cell-w, 1ch) var(--cell-h, 1em); }`);
+  }
+  if (lines) {
+    const shade = `rgba(0,0,0,${((o.paper === "dark" ? 0.65 : 0.3) * lines).toFixed(2)})`;
+    rules.push(`${sel} { background-image: repeating-linear-gradient(to bottom, ${shade} 0 1px, transparent 1px 3px); background-attachment: local; }`);
+  }
+  return rules.join("\n");
+}
+
+const htmlPage = ({ title, dark, fontSize, css, body }) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -308,13 +337,38 @@ export function toHtml(grid, { title = "Character art", fontSize = 10 } = {}) {
 <style>
   html, body { margin: 0; background: ${dark ? "#000" : "#fff"}; color: ${dark ? "#e8e8e8" : "#111"}; }
   pre { margin: 0; padding: 16px; font: ${fontSize}px/1 ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; letter-spacing: 0; overflow: auto; }
+${css}
 </style>
 </head>
 <body>
-<pre>${toSpans(grid)}</pre>
+${body}
 </body>
 </html>
 `;
+
+/** One self-contained HTML file of the art. */
+export function toHtml(grid, { title = "Character art", fontSize = 10 } = {}) {
+  return htmlPage({ title, dark: grid.options.paper === "dark", fontSize, css: effectCss(grid.options), body: `<pre>${toSpans(grid)}</pre>` });
+}
+
+/**
+ * One self-contained HTML file of moving art: the frames in turn at `fps`, looped, by CSS alone (no script, so it plays
+ * under a policy that forbids scripts). The first grid's options (paper, effects) are the file's.
+ */
+export function toAnimatedHtml(grids, { title = "Character art", fontSize = 10, fps = 10 } = {}) {
+  if (!grids.length) throw new Error("an animation has at least one frame");
+  const n = grids.length, period = n / fps;
+  const css = [
+    "  .frames { display: grid; }",
+    `  .frames > pre { grid-area: 1 / 1; visibility: hidden; animation: frame ${period.toFixed(3)}s step-end infinite; }`,
+    `  @keyframes frame { 0% { visibility: visible; } ${(100 / n).toFixed(4)}% { visibility: hidden; } }`,
+    "  @media (prefers-reduced-motion: reduce) { .frames > pre { animation: none; } .frames > pre:first-child { visibility: visible; } }",
+    effectCss(grids[0].options, ".frames > pre"),
+  ].join("\n");
+  // Frame k shows while the time since the start, modulo the period, is in [k/fps, (k+1)/fps): a delay of k/fps, made
+  // negative by one period so that every frame runs from the first moment.
+  const frames = grids.map((g, k) => `<pre style="animation-delay:${((k - n) / fps).toFixed(3)}s">${toSpans(g)}</pre>`);
+  return htmlPage({ title, dark: grids[0].options.paper === "dark", fontSize, css, body: `<div class="frames">\n${frames.join("\n")}\n</div>` });
 }
 
 /**
@@ -352,4 +406,41 @@ export function paint(ctx, grid, { cell = 8 } = {}) {
       ctx.restore();
     }
   }
+  paintEffects(ctx, grid.options, cw, ch);
+}
+
+/** The post effects over what paint drew, as effectCss draws them over a <pre>. */
+function paintEffects(ctx, o, cw, ch) {
+  const { width, height } = ctx.canvas;
+  const dark = o.paper === "dark";
+  const bloom = strength(o, "bloom"), lines = strength(o, "scanlines"), dots = strength(o, "halftone");
+  ctx.save();
+  if (bloom) {
+    // The art over itself, blurred: added light on dark paper, multiplied ink on light paper.
+    ctx.filter = `blur(${(2 + 6 * bloom).toFixed(1)}px)`;
+    ctx.globalCompositeOperation = dark ? "lighter" : "multiply";
+    ctx.globalAlpha = 0.35 + 0.5 * bloom;
+    ctx.drawImage(ctx.canvas, 0, 0);
+    ctx.filter = "none";
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
+  }
+  if (dots) {
+    // Paper over each cell outside its dot.
+    const r = (Math.min(cw, ch) / 2) * (1 - 0.45 * dots);
+    ctx.fillStyle = dark ? `rgba(0,0,0,${dots})` : `rgba(255,255,255,${dots})`;
+    ctx.beginPath();
+    for (let y = 0; y < height; y += ch)
+      for (let x = 0; x < width; x += cw) {
+        ctx.rect(x, y, cw, ch);
+        ctx.moveTo(x + cw / 2 + r, y + ch / 2);
+        ctx.arc(x + cw / 2, y + ch / 2, r, 0, Math.PI * 2);
+      }
+    ctx.fill("evenodd");
+  }
+  if (lines) {
+    ctx.fillStyle = `rgba(0,0,0,${((dark ? 0.65 : 0.3) * lines).toFixed(2)})`;
+    for (let y = 0; y < height; y += 3) ctx.fillRect(0, y, width, 1);
+  }
+  ctx.restore();
 }

@@ -1,7 +1,7 @@
 // The renderer's rules, on images made here. Run: node --test tests/
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CHARSETS, render, toAnsi, toHtml, toText, nearest256, color256 } from "../glyphloom.js";
+import { CHARSETS, effectCss, render, toAnimatedHtml, toAnsi, toHtml, toText, nearest256, color256 } from "../glyphloom.js";
 
 const image = (width, height, at) => {
   const data = new Uint8ClampedArray(width * height * 4);
@@ -82,4 +82,30 @@ test("the HTML export holds the same characters as the text, escaped", () => {
   const pre = html.slice(html.indexOf("<pre>") + 5, html.indexOf("</pre>"));
   const text = pre.replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
   assert.equal(text + "\n", toText(grid));
+});
+
+test("moving art: each frame's characters, shown one at a time, in order, by CSS alone", () => {
+  const frames = [0, 128, 255].map((v) => render(flat(v), { columns: 4, charAspect: 1 }));
+  const html = toAnimatedHtml(frames, { fps: 10, title: "three greys" });
+  assert.ok(!/<script/i.test(html), "no script");
+  const pres = [...html.matchAll(/<pre style="animation-delay:(-?[\d.]+)s">([^<]*)<\/pre>/g)];
+  assert.deepEqual(pres.map((m) => m[2] + "\n"), frames.map(toText));
+  // Frame k starts k tenths of a second into a 0.3 s loop: delays of -0.3, -0.2, -0.1.
+  assert.deepEqual(pres.map((m) => Number(m[1])), [-0.3, -0.2, -0.1]);
+  assert.match(html, /animation: frame 0\.300s step-end infinite/);
+  assert.match(html, /@keyframes frame \{ 0% \{ visibility: visible; \} 33\.3333% \{ visibility: hidden; \} \}/);
+  assert.throws(() => toAnimatedHtml([]), /at least one frame/);
+});
+
+test("effects are drawn over the art and never change its characters", () => {
+  const img = image(60, 60, (x, y) => [(x * 4) % 255, (y * 4) % 255, 120]);
+  const plain = render(img, { columns: 30, charset: "detailed" });
+  const styled = render(img, { columns: 30, charset: "detailed", scanlines: 1, bloom: 0.5, halftone: 0.5 });
+  assert.deepEqual(styled.chars, plain.chars);
+  assert.equal(effectCss(plain.options), "");
+  const css = effectCss(styled.options, "#art");
+  assert.match(css, /#art \{ text-shadow:/);
+  assert.match(css, /#art \{ -webkit-mask-image: radial-gradient/);
+  assert.match(css, /#art \{ background-image: repeating-linear-gradient/);
+  assert.ok(toHtml(styled).includes(effectCss(styled.options)), "the HTML export carries the effects");
 });
