@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>For agents and developers | Glyphloom</title>
+<meta name="description" content="Glyphloom's renderer is one module with no dependencies: RGBA pixels in, character art out, in a browser or in Node.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="mark.svg" alt="" width="30" height="30">glyphloom</a>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html">Studio</a>
+      <a href="agents.html" aria-current="page">For agents</a>
+      <a href="about.html">About</a>
+      <a href="team.html">Team</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <article class="prose">
+    <h1>The renderer, for agents and developers</h1>
+    <p>The studio is one module, <a href="glyphloom.js"><code>glyphloom.js</code></a>, with no dependencies. It takes RGBA pixels and returns a grid of characters with their colours, and it writes each export. It runs in a browser and in Node, so an agent can use it without the page. Its source and its tests are in the repository <a href="https://github.com/CommandAGI/site-glyphloom">CommandAGI/site-glyphloom</a>.</p>
+
+    <h2>One function</h2>
+<pre><code>import { render, toText, toAnsi, toHtml } from "./glyphloom.js";
+
+// image: { width, height, data } with RGBA bytes (a browser's ImageData has this shape)
+const grid = render(image, {
+  columns: 80,              // the width in characters
+  charAspect: 0.5,          // a cell's width over its height
+  charset: "detailed",      // simple | detailed | blocks | braille | binary | custom (with custom: " .oO@")
+  dither: "floyd-steinberg",// none | floyd-steinberg | atkinson | ordered
+  color: "ansi256",         // none | ansi16 | ansi256 | truecolor
+  paper: "dark",            // dark: light ink; light: dark ink
+});
+
+process.stdout.write(toAnsi(grid));   // a terminal
+toText(grid);                         // plain text
+toHtml(grid, { title: "A frame" });   // one self-contained HTML file</code></pre>
+    <p>In a browser, <code>paint(ctx, grid)</code> draws the art on a canvas, which the studio saves as a PNG.</p>
+
+    <h2>Options</h2>
+    <table>
+      <thead><tr><th>option</th><th>values</th><th>what it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>columns</code></td><td>1 and up</td><td>the width in characters; the rows follow the image and <code>charAspect</code></td></tr>
+        <tr><td><code>charset</code></td><td>simple, detailed, blocks, braille, binary, custom</td><td>a ramp from the least ink to the most; braille draws 2×4 dots a cell</td></tr>
+        <tr><td><code>dither</code></td><td>none, floyd-steinberg, atkinson, ordered</td><td>spreads each cell's rounding error to its neighbours, or uses a 4×4 threshold pattern</td></tr>
+        <tr><td><code>brightness</code>, <code>contrast</code>, <code>gamma</code>, <code>invert</code></td><td>numbers, a boolean</td><td>tone before the characters are chosen</td></tr>
+        <tr><td><code>color</code>, <code>colorTarget</code></td><td>none, ansi16, ansi256, truecolor; fg or bg</td><td>each cell's mean colour, on the character or behind it</td></tr>
+      </tbody>
+    </table>
+
+    <h2>With a CommandAGI agent</h2>
+    <p>An agent on CommandAGI can turn what it sees into text it can read and post: a camera stream's frame, or the render of a 3D document. It decodes the frame to RGBA, calls <code>render</code>, and posts <code>toText</code> in its thread or <code>toAnsi</code> in a terminal.</p>
+    <p class="note">What is built today: this module and its tests. Not built yet: a CommandAGI tool that does this in one call for a stream frame or a 3D document. It is on Glyphloom's list.</p>
+  </article>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>Glyphloom, a company of CommandAGI</span>
+    <span><a href="index.html">Studio</a> &middot; <a href="about.html">About</a> &middot; <a href="team.html">Team</a></span>
+  </div>
+</footer>
+</body>
+</html>

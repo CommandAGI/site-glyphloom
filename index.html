@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Glyphloom: character art from a picture or a word</title>
+<meta name="description" content="Turn an image or a line of text into ASCII, block, braille or ANSI art in your browser. Your image never leaves your device.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the studio</a>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="mark.svg" alt="" width="30" height="30">glyphloom</a>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html" aria-current="page">Studio</a>
+      <a href="agents.html">For agents</a>
+      <a href="about.html">About</a>
+      <a href="team.html">Team</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="lede wrap">
+    <h1>Weave a picture out of characters.</h1>
+    <p>Open an image or type a word. Choose the width, the characters, the colour and the dithering, then copy or download the result. Everything happens in this page: your image never leaves your device.</p>
+  </section>
+
+  <section class="studio wrap" aria-label="Studio">
+    <form class="panel" id="controls">
+      <fieldset>
+        <legend>Source</legend>
+        <div class="seg" role="group" aria-label="Source">
+          <button type="button" id="src-image" aria-pressed="true">Image</button>
+          <button type="button" id="src-text" aria-pressed="false">Text</button>
+        </div>
+        <div id="image-source">
+          <div class="btns">
+            <label class="btn primary" for="file">Open an image</label>
+            <input class="hidden" type="file" id="file" accept="image/*">
+            <button type="button" class="btn" id="sample">Use the sample</button>
+          </div>
+          <div class="drop" id="drop">Drop an image here, or paste one.</div>
+        </div>
+        <div id="text-source" class="hidden">
+          <div class="row two"><label for="text">Text</label><input type="text" id="text" value="hello" maxlength="40" autocomplete="off"></div>
+          <div class="row two"><label for="face">Typeface</label>
+            <select id="face">
+              <option value="700 160px system-ui, sans-serif">Sans, bold</option>
+              <option value="700 160px Georgia, serif">Serif, bold</option>
+              <option value="700 160px ui-monospace, monospace">Monospace, bold</option>
+              <option value="italic 400 160px Georgia, serif">Serif, italic</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Size</legend>
+        <div class="row"><label for="columns">Width</label><input type="range" id="columns" min="20" max="240" value="100"><output for="columns" id="columns-out">100</output></div>
+        <div class="row"><label for="aspect">Cell shape</label><input type="range" id="aspect" min="0.35" max="0.8" step="0.01" value="0.5"><output for="aspect" id="aspect-out">0.50</output></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Characters</legend>
+        <div class="row two"><label for="charset">Set</label>
+          <select id="charset">
+            <option value="simple">Ramp, simple</option>
+            <option value="detailed">Ramp, detailed</option>
+            <option value="blocks">Blocks</option>
+            <option value="braille">Braille dots</option>
+            <option value="binary">Binary</option>
+            <option value="custom">Your own</option>
+          </select>
+        </div>
+        <div class="row two hidden" id="custom-row"><label for="custom">Characters</label><input type="text" id="custom" value=" .oO@" autocomplete="off" spellcheck="false" aria-describedby="custom-help"></div>
+        <p class="status hidden" id="custom-help">From the least ink to the most.</p>
+        <div class="row two"><label for="dither">Dithering</label>
+          <select id="dither">
+            <option value="none">None</option>
+            <option value="floyd-steinberg">Floyd–Steinberg</option>
+            <option value="atkinson">Atkinson</option>
+            <option value="ordered">Ordered (Bayer 4×4)</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Tone</legend>
+        <div class="row"><label for="brightness">Brightness</label><input type="range" id="brightness" min="-0.5" max="0.5" step="0.01" value="0"><output for="brightness" id="brightness-out">0.00</output></div>
+        <div class="row"><label for="contrast">Contrast</label><input type="range" id="contrast" min="0.2" max="3" step="0.05" value="1"><output for="contrast" id="contrast-out">1.00</output></div>
+        <div class="row"><label for="gamma">Gamma</label><input type="range" id="gamma" min="0.3" max="3" step="0.05" value="1"><output for="gamma" id="gamma-out">1.00</output></div>
+        <label class="check"><input type="checkbox" id="invert"> Invert</label>
+        <div class="row two"><label for="paper">Paper</label>
+          <select id="paper"><option value="dark">Dark, light ink</option><option value="light">Light, dark ink</option></select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Colour</legend>
+        <div class="row two"><label for="color">Colour</label>
+          <select id="color">
+            <option value="none">None</option>
+            <option value="ansi16">ANSI, 16 colours</option>
+            <option value="ansi256">ANSI, 256 colours</option>
+            <option value="truecolor">Full colour</option>
+          </select>
+        </div>
+        <div class="row two"><label for="target">Colour on</label>
+          <select id="target"><option value="fg">The characters</option><option value="bg">The cells behind them</option></select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Export</legend>
+        <div class="btns">
+          <button type="button" class="btn primary" id="copy">Copy text</button>
+          <button type="button" class="btn" data-export="txt">.txt</button>
+          <button type="button" class="btn" data-export="ans">.ans</button>
+          <button type="button" class="btn" data-export="html">.html</button>
+          <button type="button" class="btn" data-export="png">.png</button>
+        </div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </fieldset>
+    </form>
+
+    <div class="stage">
+      <div class="stage-bar">
+        <span id="dims">Open an image or use the sample.</span>
+        <label class="check"><input type="checkbox" id="fit" checked> Fit to the frame</label>
+      </div>
+      <div class="frame" id="frame"><pre id="art" aria-label="The character art"></pre></div>
+      <p class="private"><span aria-hidden="true">&#9670;</span><span>Private by construction: this page reads your image with your browser and sends nothing. Its security policy forbids it any connection after it loads.</span></p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <span>Glyphloom, a company of CommandAGI</span>
+    <span><a href="agents.html">For agents</a> &middot; <a href="about.html">About</a> &middot; <a href="team.html">Team</a></span>
+  </div>
+</footer>
+<script type="module" src="studio.js"></script>
+</body>
+</html>
