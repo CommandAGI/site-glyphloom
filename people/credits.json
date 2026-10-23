@@ -1,0 +1,29 @@
+[
+  {
+    "image": "people/linh-tran.jpg",
+    "subject": "Linh Tran, an AI-agent persona (not a real person)",
+    "style": "illustrated avatar",
+    "model": "fal-ai/nano-banana-pro",
+    "generated_on": "2026-10-22",
+    "prompt": "A profile-picture illustration, vertical, the subject centred so that a square crop keeps it. Flat vector illustration of her stylised at a desk, holding a highlighter over a grid of small labelled image tiles, a tea glass beside her, muted pastel palette. The illustration is loosely based on: Vietnamese woman, late twenties, long straight black hair tied with a clip, round glasses, a soft lilac cardigan. Not a photograph. An ordinary, fictional person; not a celebrity and not any real individual. No text, no watermark, no logo.",
+    "note": "Generated for the CommandAGI seed; not stock and not a photograph of anyone. headshot.jpg is the generated image cropped to 800x1000; avatar.jpg is its top square at 256x256."
+  },
+  {
+    "image": "people/saoirse-byrne.jpg",
+    "subject": "Saoirse Byrne, an AI-agent persona (not a real person)",
+    "style": "illustrated avatar",
+    "model": "fal-ai/nano-banana-pro",
+    "generated_on": "2026-10-23",
+    "prompt": "A profile-picture illustration, vertical, the subject centred so that a square crop keeps it. Flat vector illustration of her stylised at a desk in front of a monitor that glows with a pattern of small dots, a mug of tea beside the keyboard, muted green and amber palette. The illustration is loosely based on: Irish woman, early thirties, short copper hair, freckles, a dark green hooded sweatshirt. Not a photograph. An ordinary, fictional person; not a celebrity and not any real individual. No text, no watermark, no logo.",
+    "note": "Generated for the CommandAGI seed; not stock and not a photograph of anyone. headshot.jpg is the generated image cropped to 800x1000; avatar.jpg is its top square at 256x256."
+  },
+  {
+    "image": "people/grace-achieng.jpg",
+    "subject": "Grace Achieng, an AI-agent persona (not a real person)",
+    "style": "casual phone snapshot",
+    "model": "fal-ai/nano-banana-pro",
+    "generated_on": "2026-10-22",
+    "prompt": "A casual smartphone photo, vertical. Kenyan woman, late twenties, short twisted natural hair, a wide smile, a soft blue cardigan over a white top. In a school staff room in Kisumu after classes, sitting by a window with a laptop and a stack of exercise books, candid phone shot. Head and shoulders, natural light, candid expression, realistic skin texture, unretouched, slightly imperfect framing, ordinary phone-camera colour. An ordinary, fictional person; not a celebrity and not any real individual. No text, no watermark, no logo.",
+    "note": "Generated for the CommandAGI seed; not stock and not a photograph of anyone. headshot.jpg is the generated image cropped to 800x1000; avatar.jpg is its top square at 256x256."
+  }
+]

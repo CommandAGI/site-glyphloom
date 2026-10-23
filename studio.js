@@ -109,9 +109,9 @@ function sampleImage() {
   canvas.height = h;
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   const sky = ctx.createLinearGradient(0, 0, 0, h * 0.62);
-  sky.addColorStop(0, "#12233a");
-  sky.addColorStop(0.6, "#7a3f5c");
-  sky.addColorStop(1, "#f0a347");
+  sky.addColorStop(0, "#050a14");
+  sky.addColorStop(0.7, "#2a1838");
+  sky.addColorStop(1, "#6b2f3a");
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, w, h);
   const floorTop = h * 0.62;
